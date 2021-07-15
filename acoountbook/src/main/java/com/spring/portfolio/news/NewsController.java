@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,98 +19,77 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-
-import com.spring.portfolio.HomeController;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class NewsController {
 
 	private static final Logger logger = LoggerFactory.getLogger(NewsController.class);
 
-	Map<String, List> newslist = new HashMap<String, List>();
 
-	@RequestMapping(value = "crawling", method = RequestMethod.GET)
-	public String startCrawl(Model model) throws IOException {
+	// jsp페이지 로딩을 위한 임시 메소드
+	@RequestMapping(value = "/newsList", method = RequestMethod.GET)
+	public String startCrawl(HttpServletRequest req, HttpServletResponse resp, NewsVO newsVO) throws IOException {
+		
+		logger.info("Test~~~~");
 
-//		SimpleDateFormat formatter = new SimpleDateFormat("yyyy.MM.dd", Locale.KOREA);
-//		Date currentTime = new Date();
-//		
-//		String dTime = formatter.format(currentTime);
-//		String e_date = dTime; // 원하는포맷으로 출력한 현재시간
-//		
-//		currentTime.setDate(currentTime.getDate() - 1);
-//		String s_date = formatter.format(currentTime);
+		
+		return "/news/newsList";
 
-		String address = "https://news.naver.com/main/list.nhn?mode=LSD&mid=sec&sid1=001&listType=title&date=20210628";
+	}
+	
+	// Ajax로 뉴스 불러오기
+	@RequestMapping(value = "/newsListAjax", method = RequestMethod.GET)
+	@ResponseBody
+	public List startCrawlAjax(HttpServletRequest req, HttpServletResponse resp, NewsVO newsVO) throws IOException {
 		
-		Document rawData = Jsoup.connect(address).timeout(5000).get();
+		logger.info("Test~~~~");
+	
+		// 현재날짜 포맷변경 후 String에 저장
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd", Locale.KOREA);
+		Date currentTime = new Date();
 		
-		System.out.println(address);		
+		String now = formatter.format(currentTime);
 		
-		//Elements articles = rawData.select("ul.type02");
+		// 기사 카테고리 선택
+		String sid1 = newsVO.getSid1();
+
+		logger.info(sid1);
+
+		String url = "https://news.naver.com/main/list.nhn?mode=LSD&mid=sec&sid1=" + sid1 + "&listType=title&date=" + now;
+		
+		Document rawData = Jsoup.connect(url).timeout(5000).get();
+		
+		//System.out.println(address);		
+		
 		Elements articles = rawData.select("ul.type02 > li");
+		System.out.println("articles >>>>> " + articles);
 		
-		List<String> hreflist = new ArrayList<String>();
-		List<String> titlelist = new ArrayList<String>();
-		List<String> writerlist = new ArrayList<String>();
-		List<String> writeDatelist = new ArrayList<String>();
+		List article = new ArrayList();
 		
+				
 		for(Element e : articles) {
-			System.out.println(e.toString());
+			Map<String, String> result = new HashMap<String, String>();
+			//System.out.println(e.toString());
 			 
 			String href = e.select("a").attr("href");
+			result.put("href", href);
 			String title = e.select("a").text();
+			result.put("title", title);
 			String writer = e.select("span.writing").text();
+			result.put("writer", writer);
 			String writeDate = e.select("span.date").text();
-			
-			hreflist.add(href);
-			titlelist.add(title);
-			writerlist.add(writer);
-			writeDatelist.add(writeDate);
-			
-		}
-		
-		
-		System.out.println("writeDatelist----------------------");
-		for(String str : writeDatelist) {
-			System.out.println(str);
-		}
-		System.out.println("----------------------");
-		
-		newslist.put("href", hreflist);
-		newslist.put("title", titlelist);
-		newslist.put("writer", writerlist);
-		newslist.put("writeDate", writeDatelist);
-		
-		System.out.println(newslist);
-		
-		model.addAttribute("articles", articles);
-		
-		return "/home";
-		
+			result.put("writeDate", writeDate);
+					
+			article.add(result);
+						
+		}	
+		//System.out.println(article);
 
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-
+		return article;
 	}
 
 }
