@@ -3,9 +3,12 @@ package com.spring.service;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.spring.dao.BoardDAO;
 import com.spring.vo.BoardVO;
@@ -16,6 +19,7 @@ public class BoardServiceImpl implements BoardService{
 
 	@Inject
 	private BoardDAO dao;
+	
 	
 	//게시글 작성
 	@Override
@@ -36,8 +40,10 @@ public class BoardServiceImpl implements BoardService{
 	}
 
 	//게시글 읽기
+	@Transactional(isolation = Isolation.READ_COMMITTED)
 	@Override
 	public BoardVO read(int bno) throws Exception {
+		dao.boardHit(bno);
 		return dao.read(bno);
 	}
 
@@ -46,11 +52,13 @@ public class BoardServiceImpl implements BoardService{
 	public void update(BoardVO boardVO) throws Exception {
 		dao.update(boardVO);
 	}
-
+	
+	//게시글 삭제
 	@Override
 	public void delete(int bno) throws Exception {
 		dao.delete(bno);
 	}
+
 
 	
 }
